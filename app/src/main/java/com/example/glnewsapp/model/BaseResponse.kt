@@ -4,11 +4,11 @@ import com.google.gson.annotations.SerializedName
 
 data class BaseResponse(
     @SerializedName("status")
-    val status: String,
+    val status: String?,
     @SerializedName("code")
-    val code: String,
+    val code: String?,
     @SerializedName("message")
-    val message: String,
+    val message: String?,
     @SerializedName("articles")
-    val newsArticles: List<NewsArticle>
+    val newsArticles: List<NewsArticle>?
 )

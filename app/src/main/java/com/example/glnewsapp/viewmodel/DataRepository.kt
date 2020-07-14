@@ -23,8 +23,12 @@ class DataRepository(var networkApi: NetworkApi) {
             override fun onResponse(call: Call<BaseResponse>, response: Response<BaseResponse>) {
                 if (response.isSuccessful) {
                     responseCallback.onSuccess(response.body() as BaseResponse)
-                } else
-                    responseCallback.onError(response.body() as BaseResponse)
+                } else {
+                    if (response.body() != null)
+                        responseCallback.onError(response.body() as BaseResponse)
+                    else
+                        responseCallback.onFailure(response.message())
+                }
             }
         })
     }

@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.glnewsapp.R
-import com.example.glnewsapp.model.BaseResponse
+import com.example.glnewsapp.model.NewsArticle
 import com.example.glnewsapp.network.NetworkApi
 import com.example.glnewsapp.utils.AppUtil
 import com.example.glnewsapp.viewmodel.DataRepository
@@ -20,6 +20,7 @@ import org.koin.android.ext.android.inject
 
 class NewsListActivity : AppCompatActivity() {
 
+    private lateinit var layoutManager: LinearLayoutManager
     private lateinit var mNewsListAdapter: NewsListAdapter
     val mNewsViewModel: NewsViewModel by lazy {
         ViewModelProvider(
@@ -34,63 +35,62 @@ class NewsListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        if (AppUtil.getInstance().isConnectedToNetwork(this))
+        if (AppUtil.getInstance().isConnectedToNetwork(this)) {
+            println("GLAPP Activity ${mNewsViewModel.pageCount}")
             mNewsViewModel.fetchTopNews(mNewsViewModel.pageCount)
-        else
-            Toast.makeText(this,getString(R.string.network_error),Toast.LENGTH_LONG).show()
-
-//        progressBar.visibility = View.VISIBLE
-//        txt_error.visibility = View.GONE
+        } else
+            Toast.makeText(this, getString(R.string.network_error), Toast.LENGTH_SHORT).show()
         setAdapter()
+        initScrollListener()
         observerViewModel()
+    }
+
+
+    private fun initScrollListener() {
+        news_recycler_list_view.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+            }
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                mNewsViewModel.onScrollEnd(this@NewsListActivity, layoutManager)
+            }
+
+        })
     }
 
 
     private fun setAdapter() {
         mNewsListAdapter = NewsListAdapter(this)
-        news_recycler_list_view.layoutManager = LinearLayoutManager(this,RecyclerView.VERTICAL,false)
+        layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        news_recycler_list_view.layoutManager = layoutManager
         news_recycler_list_view.adapter = mNewsListAdapter
-        refreshAdapter()
     }
 
     private fun observerViewModel() {
-        mNewsViewModel.baseApiResponse.observe(this, Observer {
-            news_recycler_list_view.visibility = View.VISIBLE
-            /*if (mNewsViewModel.newsArticleList.isEmpty()) {
-                news_recycler_list_view.visibility = View.VISIBLE
-                txt_error.visibility = View.GONE
-                progressBar.visibility =View.GONE
-            } else {
-                news_recycler_list_view.visibility = View.VISIBLE
-                txt_error.visibility = View.GONE
-                progressBar.visibility =View.GONE
-            }*/
-            loadRecyclerViewData(it)
-        })
 
         mNewsViewModel.responseError.observe(this, Observer {
-            txt_error.visibility = View.VISIBLE
-            txt_error.text = it
+            if (mNewsViewModel.newsArticleList.isEmpty()) {
+                txt_error.visibility = View.VISIBLE
+                txt_error.text = it
+            }
+            progressBar.visibility = View.GONE
         })
 
-        mNewsViewModel.isLoading.observe(this, Observer {
-            progressBar.visibility = if (it) View.VISIBLE else View.GONE
+        mNewsViewModel.isLoadingSuccess.observe(this, Observer {
             if (it) {
-                news_recycler_list_view.visibility = View.GONE
-                txt_error.visibility = View.GONE
-            }else{
                 news_recycler_list_view.visibility = View.VISIBLE
+                progressBar.visibility = View.GONE
+                txt_error.visibility = View.GONE
+                refreshAdapter(mNewsViewModel.newsArticleList)
             }
         })
     }
 
-    private fun loadRecyclerViewData(baseResponse: BaseResponse) {
-        mNewsViewModel.newsArticleList.addAll(baseResponse.newsArticles)
-        refreshAdapter()
-    }
 
-    private fun refreshAdapter() {
-        mNewsListAdapter.setData(mNewsViewModel.newsArticleList)
+    private fun refreshAdapter(newsArticle: List<NewsArticle>) {
+        mNewsListAdapter.setData(newsArticle as ArrayList<NewsArticle>)
         mNewsListAdapter.notifyDataSetChanged()
     }
 }
