@@ -35,8 +35,6 @@ class NewsListAdapter(
 
     override fun onBindViewHolder(holder: NewsViewHolder, position: Int) {
         holder.itemView.setOnClickListener {
-            Toast.makeText(mainActivity, "News Position $position", Toast.LENGTH_SHORT)
-                .show()
             val intent = Intent(mainActivity, DetailNewsActivity::class.java)
             intent.putExtra("NEWS", newsArticleList[position])
             mainActivity.startActivity(intent)
